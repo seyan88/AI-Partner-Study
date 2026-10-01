@@ -135,7 +135,7 @@ namespace AIPartnerStudy
 
         public MainForm()
         {
-            this.Text = "🧠 AI Partner Study - Smart Learning Companion (Dicoding)";
+            this.Text = "🧠 AI Partner Study - Smart Learning Companion";
             this.Size = new Size(950, 750);
             this.MinimumSize = new Size(880, 640);
             this.StartPosition = FormStartPosition.CenterScreen;
@@ -240,7 +240,7 @@ namespace AIPartnerStudy
 
             txtDomain = new TextBox
             {
-                Text = "dicoding.com",
+                Text = "",
                 Location = new Point(135, 14),
                 Width = 220,
                 Height = 28,
@@ -516,7 +516,7 @@ namespace AIPartnerStudy
 
             trayIcon = new NotifyIcon
             {
-                Text = "AI Partner Study - Smart Dicoding Companion",
+                Text = "AI Partner Study - Smart Learning Companion",
                 Icon = SystemIcons.Application,
                 ContextMenuStrip = trayMenu,
                 Visible = true
