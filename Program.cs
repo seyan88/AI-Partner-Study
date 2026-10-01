@@ -670,19 +670,40 @@ namespace AIPartnerStudy
 
                     if (studyCache.ContainsKey(canonicalKey) && File.Exists(studyCache[canonicalKey].NoteFilePath))
                     {
-                        // SUDAH PERNAH DI CATAT - KEMBALIKAN KE MODE SKIP (Sesuai permintaan user)
                         StudyModuleItem existing = studyCache[canonicalKey];
-                        existing.LastReviewedAt = DateTime.Now;
-                        currentActiveModule = existing;
-                        currentBatch.NoteFilePath = existing.NoteFilePath;
-                        SaveCache(); // Simpan timestamp terakhir dibaca
-
-                        lblActiveStatus.Text = string.Format("🟢 [TEREKAM] Anda sedang membaca ulang modul ID {0}", tid);
-                        lblActiveStatus.ForeColor = successGreen;
-                        lblActiveFolder.Text = "📂 POHON: " + GetRelativeVaultPath(existing.NoteFilePath);
-                        AddLog(string.Format("[SKIP] Modul ID {0} ({1}) sudah ada di Obsidian. Eksekusi Ctrl+A dibatalkan.", tid, headline), textMuted);
                         
-                        // JANGAN panggil Task.Run(() => ProcessNewModule(...)); agar tidak mengekstrak ulang!
+                        // KONDISI OTOMATIS: Jika catatan ini dibuat SEBELUM perbaikan format tabel dan markdown 
+                        // (sebelum 2 Oktober 2026, Pukul 01:00 pagi), otomatis kita timpa agar berformat rapi.
+                        if (existing.FirstRecordedAt < new DateTime(2026, 10, 2, 1, 0, 0))
+                        {
+                            existing.LastReviewedAt = DateTime.Now;
+                            existing.FirstRecordedAt = DateTime.Now; // Update agar ke depannya di-skip
+                            currentActiveModule = existing;
+                            currentBatch.NoteFilePath = existing.NoteFilePath;
+                            SaveCache();
+
+                            lblActiveStatus.Text = string.Format("🟡 [OVERWRITE MODE] Memperbaiki format lama (ID {0})", tid);
+                            lblActiveStatus.ForeColor = warningAmber;
+                            lblActiveFolder.Text = "📂 POHON: " + GetRelativeVaultPath(existing.NoteFilePath);
+                            AddLog(string.Format("[AUTO-FIX] Modul ID {0} terdeteksi menggunakan format lama. Mengekstrak ulang...", tid), warningAmber);
+                            
+                            Task.Run(() => ProcessNewModule(aid, tid, canonicalUrl, headline, courseName, hWnd));
+                        }
+                        else
+                        {
+                            // SUDAH PERNAH DI CATAT - KEMBALIKAN KE MODE SKIP (Sesuai permintaan user)
+                            existing.LastReviewedAt = DateTime.Now;
+                            currentActiveModule = existing;
+                            currentBatch.NoteFilePath = existing.NoteFilePath;
+                            SaveCache();
+
+                            lblActiveStatus.Text = string.Format("🟢 [TEREKAM] Anda sedang membaca ulang modul ID {0}", tid);
+                            lblActiveStatus.ForeColor = successGreen;
+                            lblActiveFolder.Text = "📂 POHON: " + GetRelativeVaultPath(existing.NoteFilePath);
+                            AddLog(string.Format("[SKIP] Modul ID {0} ({1}) sudah rapi di Obsidian. Eksekusi Ctrl+A dibatalkan.", tid, headline), textMuted);
+                            
+                            // JANGAN panggil Task.Run(() => ProcessNewModule(...)); agar tidak mengekstrak ulang!
+                        }
                     }
                     else
                     {
