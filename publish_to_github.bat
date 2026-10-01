@@ -5,29 +5,28 @@ echo       AUTO-PUBLISH AI PARTNER STUDY KE GITHUB (SEYAN88)
 echo ==============================================================
 echo.
 
-echo [1/3] Menginisialisasi Git Repository...
-git init
-git config user.name "seyan88"
-git config user.email "sulastiansetiadi@gmail.com"
-
-echo [2/3] Mengonfigurasi .gitignore dan melakukan commit...
-echo .vs/ > .gitignore
-echo bin/ >> .gitignore
-echo obj/ >> .gitignore
-echo *.user >> .gitignore
-echo packages/ >> .gitignore
-
-git add .
-git commit -m "Initial commit: AI Partner Study C# App dengan ekstraksi DOM dan SPA Race Condition fixes"
+echo Memastikan Anda sudah login di GitHub CLI...
+gh auth status
+if %ERRORLEVEL% NEQ 0 (
+    echo Anda belum login! Silakan jalankan 'gh auth login' terlebih dahulu.
+    pause
+    exit /b
+)
 
 echo.
-echo [3/3] Membuat repository publik di GitHub dan melakukan push...
-echo Pastikan Anda sudah login di GitHub CLI (jika belum, jalankan: gh auth login)
-gh repo create AI-Partner-Study --public --source=. --remote=origin --push
+echo Mendorong (push) kode terbaru ke GitHub...
+git remote get-url origin >nul 2>&1
+if %ERRORLEVEL% NEQ 0 (
+    echo Repository belum ada di GitHub. Membuat repository publik "AI-Partner-Study"...
+    gh repo create AI-Partner-Study --public --source=. --remote=origin --push
+) else (
+    echo Repository sudah terhubung. Memulai git push...
+    git push origin master
+)
 
 echo.
 echo ==============================================================
-echo Selesai! Jika tidak ada error merah di atas, repo berhasil dibuat!
+echo Selesai! Kode dan README terbaru sudah di-push!
 echo Cek repo Anda di: https://github.com/seyan88/AI-Partner-Study
 echo ==============================================================
 pause

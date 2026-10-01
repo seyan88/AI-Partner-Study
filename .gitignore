@@ -3,3 +3,5 @@ bin/
 obj/
 *.user
 packages/
+study_cache.json
+compile_output.txt
