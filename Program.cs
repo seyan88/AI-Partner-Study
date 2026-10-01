@@ -977,6 +977,12 @@ namespace AIPartnerStudy
             html = Regex.Replace(html, @"</div>", "\n", RegexOptions.IgnoreCase);
             html = Regex.Replace(html, @"</li>", "\n", RegexOptions.IgnoreCase);
 
+            // Mempertahankan teks tebal
+            html = Regex.Replace(html, @"<strong[^>]*>", "**", RegexOptions.IgnoreCase);
+            html = Regex.Replace(html, @"</strong>", "**", RegexOptions.IgnoreCase);
+            html = Regex.Replace(html, @"<b[^>]*>", "**", RegexOptions.IgnoreCase);
+            html = Regex.Replace(html, @"</b>", "**", RegexOptions.IgnoreCase);
+
             // Ganti format tabel sederhana
             html = Regex.Replace(html, @"<tr[^>]*>", "| ", RegexOptions.IgnoreCase);
             html = Regex.Replace(html, @"</tr>", " |\n", RegexOptions.IgnoreCase);
@@ -985,6 +991,9 @@ namespace AIPartnerStudy
             html = Regex.Replace(html, @"<th[^>]*>", " **", RegexOptions.IgnoreCase);
             html = Regex.Replace(html, @"</th>", "** |", RegexOptions.IgnoreCase);
 
+            // Injeksi pemisah tabel di akhir thead atau baris pertama (jika thead ada)
+            html = Regex.Replace(html, @"</thead[^>]*>", "\n|---|---|---|---|---|\n", RegexOptions.IgnoreCase);
+
             // Buang semua tag HTML yang tersisa
             html = Regex.Replace(html, @"<[^>]+>", "");
 
@@ -992,9 +1001,17 @@ namespace AIPartnerStudy
             html = html.Replace("&lt;", "<").Replace("&gt;", ">").Replace("&amp;", "&").Replace("&quot;", "\"").Replace("&#39;", "'");
             html = html.Replace("&nbsp;", " ");
             html = html.Replace("Â", ""); // Hapus karakter A-tilde aneh dari encoding UTF-8 ganda
+            html = html.Replace("â€œ", "\"").Replace("â€", "\"").Replace("â€™", "'");
             
-            // Tambahkan Markdown Table Header Separator
-            html = Regex.Replace(html, @"(\| \*\*.*?\*\* \|\n)", "$1|---|---|---|---|---|\n");
+            // Tambahkan Markdown Table Header Separator jika belum ada (mencari baris pertama tabel)
+            if (html.Contains("| ") && !html.Contains("|---|"))
+            {
+                int firstRowEnd = html.IndexOf(" |\n");
+                if (firstRowEnd > -1)
+                {
+                    html = html.Insert(firstRowEnd + 3, "|---|---|---|---|---|\n");
+                }
+            }
 
             return html;
         }
