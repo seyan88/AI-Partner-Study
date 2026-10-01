@@ -983,16 +983,28 @@ namespace AIPartnerStudy
             html = Regex.Replace(html, @"<b[^>]*>", "**", RegexOptions.IgnoreCase);
             html = Regex.Replace(html, @"</b>", "**", RegexOptions.IgnoreCase);
 
-            // Ganti format tabel sederhana
-            html = Regex.Replace(html, @"<tr[^>]*>", "| ", RegexOptions.IgnoreCase);
-            html = Regex.Replace(html, @"</tr>", " |\n", RegexOptions.IgnoreCase);
-            html = Regex.Replace(html, @"<td[^>]*>", " ", RegexOptions.IgnoreCase);
-            html = Regex.Replace(html, @"</td>", " |", RegexOptions.IgnoreCase);
-            html = Regex.Replace(html, @"<th[^>]*>", " **", RegexOptions.IgnoreCase);
-            html = Regex.Replace(html, @"</th>", "** |", RegexOptions.IgnoreCase);
+            // Ganti format tabel secara menyeluruh (mencari tag <table>)
+            html = Regex.Replace(html, @"<table[^>]*>(.*?)</table>", tableMatch => {
+                string tableContent = tableMatch.Groups[1].Value;
+                bool isFirstRow = true;
+                tableContent = Regex.Replace(tableContent, @"<tr[^>]*>(.*?)</tr>", m => {
+                    string row = m.Groups[1].Value;
+                    row = row.Replace("\n", " ").Replace("\r", " "); // Hapus enter di dalam sel tabel
+                    row = Regex.Replace(row, @"<th[^>]*>", " **", RegexOptions.IgnoreCase);
+                    row = Regex.Replace(row, @"</th>", "** |", RegexOptions.IgnoreCase);
+                    row = Regex.Replace(row, @"<td[^>]*>", " ", RegexOptions.IgnoreCase);
+                    row = Regex.Replace(row, @"</td>", " |", RegexOptions.IgnoreCase);
+                    row = Regex.Replace(row, @"<[^>]+>", ""); // Bersihkan sisa tag HTML di dalam baris agar bersih
+                    string outRow = "| " + row.Trim() + " |\n";
+                    if (isFirstRow) {
+                        outRow += "|---|---|---|---|---|\n";
+                        isFirstRow = false;
+                    }
+                    return outRow;
+                }, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+                return "\n\n" + tableContent + "\n\n";
+            }, RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
-            // Injeksi pemisah tabel di akhir thead atau baris pertama (jika thead ada)
-            html = Regex.Replace(html, @"</thead[^>]*>", "\n|---|---|---|---|---|\n", RegexOptions.IgnoreCase);
 
             // Buang semua tag HTML yang tersisa
             html = Regex.Replace(html, @"<[^>]+>", "");
@@ -1003,15 +1015,6 @@ namespace AIPartnerStudy
             html = html.Replace("Â", ""); // Hapus karakter A-tilde aneh dari encoding UTF-8 ganda
             html = html.Replace("â€œ", "\"").Replace("â€", "\"").Replace("â€™", "'");
             
-            // Tambahkan Markdown Table Header Separator jika belum ada (mencari baris pertama tabel)
-            if (html.Contains("| ") && !html.Contains("|---|"))
-            {
-                int firstRowEnd = html.IndexOf(" |\n");
-                if (firstRowEnd > -1)
-                {
-                    html = html.Insert(firstRowEnd + 3, "|---|---|---|---|---|\n");
-                }
-            }
 
             return html;
         }
