@@ -996,7 +996,23 @@ namespace AIPartnerStudy
             html = Regex.Replace(html, @"</p>", "\n\n", RegexOptions.IgnoreCase);
             html = Regex.Replace(html, @"<div[^>]*>", "\n", RegexOptions.IgnoreCase); // Mencegah teks/kode di dalam div menyatu
             html = Regex.Replace(html, @"</div>", "\n", RegexOptions.IgnoreCase);
-            html = Regex.Replace(html, @"</li>", "\n", RegexOptions.IgnoreCase);
+            // Mengubah ordered list (<ol>)
+            html = Regex.Replace(html, @"<ol[^>]*>(.*?)</ol>", m => {
+                string olContent = m.Groups[1].Value;
+                int count = 1;
+                return "\n\n" + Regex.Replace(olContent, @"<li[^>]*>(.*?)</li>", m2 => {
+                    return (count++) + ". " + m2.Groups[1].Value + "\n";
+                }, RegexOptions.IgnoreCase | RegexOptions.Singleline) + "\n\n";
+            }, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+
+            // Mengubah unordered list (<ul>)
+            html = Regex.Replace(html, @"<ul[^>]*>(.*?)</ul>", m => {
+                string ulContent = m.Groups[1].Value;
+                return "\n\n" + Regex.Replace(ulContent, @"<li[^>]*>(.*?)</li>", "- $1\n", RegexOptions.IgnoreCase | RegexOptions.Singleline) + "\n\n";
+            }, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+
+            // Fallback untuk <li> yang lepas
+            html = Regex.Replace(html, @"<li[^>]*>(.*?)</li>", "- $1\n", RegexOptions.IgnoreCase | RegexOptions.Singleline);
             // Ganti format tabel secara menyeluruh (mencari tag <table>)
             html = Regex.Replace(html, @"<table[^>]*>(.*?)</table>", tableMatch => {
                 string tableContent = tableMatch.Groups[1].Value;
@@ -1050,8 +1066,7 @@ namespace AIPartnerStudy
 
             string result = raw;
 
-            // 1. Hapus Footer (Navigasi bawah, komentar, dsb)
-            string[] footerKeywords = { "Sebelumnya\r\nSelanjutnya", "Sebelumnya\nSelanjutnya", "Laporkan Materi", "Selesaikan Pembelajaran" };
+            string[] footerKeywords = { "Laporkan Materi", "Selesaikan Pembelajaran" };
             foreach (var keyword in footerKeywords)
             {
                 int idx = result.IndexOf(keyword);
@@ -1059,6 +1074,20 @@ namespace AIPartnerStudy
                 {
                     result = result.Substring(0, idx);
                 }
+            }
+
+            // Hapus navigasi "Sebelumnya -> Selanjutnya" beserta popup hari beruntun di bawahnya
+            Match mNav = Regex.Match(result, @"Sebelumnya[\s\r\n]+Selanjutnya", RegexOptions.IgnoreCase);
+            if (mNav.Success)
+            {
+                result = result.Substring(0, mNav.Index);
+            }
+            
+            // Hapus pop-up khusus jika hanya ada "Selanjutnya" tanpa "Sebelumnya" (di awal modul)
+            Match mNavStart = Regex.Match(result, @"Selanjutnya[\s\r\n]+Ã—[\s\r\n]+\d+[\s\r\n]+hari beruntun", RegexOptions.IgnoreCase);
+            if (mNavStart.Success)
+            {
+                result = result.Substring(0, mNavStart.Index);
             }
 
             // 1.5 Ekstrak headline akurat dari HTML (Mengatasi SPA race condition di mana window title telat berubah)
@@ -1228,7 +1257,12 @@ namespace AIPartnerStudy
                 sb.AppendLine("<!-- Tekan F9 saat membuka materi untuk menyematkan diagram atau infografis ke modul ini -->");
                 sb.AppendLine();
                 sb.AppendLine("## 📖 Materi Lengkap Pembelajaran");
+                sb.AppendLine();
+                sb.AppendLine("<div align=\"justify\">");
+                sb.AppendLine();
                 sb.AppendLine(fullPageText);
+                sb.AppendLine();
+                sb.AppendLine("</div>");
                 sb.AppendLine();
                 sb.AppendLine("---");
                 sb.AppendLine();
