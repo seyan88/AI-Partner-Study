@@ -976,13 +976,6 @@ namespace AIPartnerStudy
             html = Regex.Replace(html, @"<div[^>]*>", "\n", RegexOptions.IgnoreCase); // Mencegah teks/kode di dalam div menyatu
             html = Regex.Replace(html, @"</div>", "\n", RegexOptions.IgnoreCase);
             html = Regex.Replace(html, @"</li>", "\n", RegexOptions.IgnoreCase);
-
-            // Mempertahankan teks tebal
-            html = Regex.Replace(html, @"<strong[^>]*>", "**", RegexOptions.IgnoreCase);
-            html = Regex.Replace(html, @"</strong>", "**", RegexOptions.IgnoreCase);
-            html = Regex.Replace(html, @"<b[^>]*>", "**", RegexOptions.IgnoreCase);
-            html = Regex.Replace(html, @"</b>", "**", RegexOptions.IgnoreCase);
-
             // Ganti format tabel secara menyeluruh (mencari tag <table>)
             html = Regex.Replace(html, @"<table[^>]*>(.*?)</table>", tableMatch => {
                 string tableContent = tableMatch.Groups[1].Value;
@@ -990,14 +983,25 @@ namespace AIPartnerStudy
                 tableContent = Regex.Replace(tableContent, @"<tr[^>]*>(.*?)</tr>", m => {
                     string row = m.Groups[1].Value;
                     row = row.Replace("\n", " ").Replace("\r", " "); // Hapus enter di dalam sel tabel
-                    row = Regex.Replace(row, @"<th[^>]*>", " **", RegexOptions.IgnoreCase);
-                    row = Regex.Replace(row, @"</th>", "** |", RegexOptions.IgnoreCase);
+                    row = Regex.Replace(row, @"<th[^>]*>", " ", RegexOptions.IgnoreCase);
+                    row = Regex.Replace(row, @"</th>", " |", RegexOptions.IgnoreCase);
                     row = Regex.Replace(row, @"<td[^>]*>", " ", RegexOptions.IgnoreCase);
                     row = Regex.Replace(row, @"</td>", " |", RegexOptions.IgnoreCase);
                     row = Regex.Replace(row, @"<[^>]+>", ""); // Bersihkan sisa tag HTML di dalam baris agar bersih
-                    string outRow = "| " + row.Trim() + " |\n";
+                    
+                    // Karena `</td>` dan `</th>` sudah ditambah ` |`, kita hanya butuh awalan `| `
+                    string outRow = "| " + row.Trim() + "\n";
+                    
                     if (isFirstRow) {
-                        outRow += "|---|---|---|---|---|\n";
+                        // Hitung jumlah kolom berdasarkan pemisah `|`
+                        int colCount = outRow.Split('|').Length - 2;
+                        if (colCount < 1) colCount = 1;
+                        
+                        string sep = "|";
+                        for(int i = 0; i < colCount; i++) {
+                            sep += "---|";
+                        }
+                        outRow += sep + "\n";
                         isFirstRow = false;
                     }
                     return outRow;
