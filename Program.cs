@@ -668,21 +668,21 @@ namespace AIPartnerStudy
                     AddLog(string.Format("[KELAS] Terdeteksi: \"{0}\" (ID Kelas: {1})", courseName, aid), accentBlue);
                     AddLog(string.Format("[MODUL] Terdeteksi: \"{0}\" (ID Modul: {1})", headline, tid), textLight);
 
-                    if (studyCache.ContainsKey(canonicalKey))
+                    if (studyCache.ContainsKey(canonicalKey) && File.Exists(studyCache[canonicalKey].NoteFilePath))
                     {
-                        // HACK: Saat ini diubah ke OVERWRITE MODE untuk memperbaiki materi lama
+                        // SUDAH PERNAH DI CATAT - KEMBALIKAN KE MODE SKIP (Sesuai permintaan user)
                         StudyModuleItem existing = studyCache[canonicalKey];
                         existing.LastReviewedAt = DateTime.Now;
                         currentActiveModule = existing;
                         currentBatch.NoteFilePath = existing.NoteFilePath;
+                        SaveCache(); // Simpan timestamp terakhir dibaca
 
-                        lblActiveStatus.Text = string.Format("🟡 [OVERWRITE MODE] Memperbarui ulang modul ID {0}", tid);
-                        lblActiveStatus.ForeColor = warningAmber;
+                        lblActiveStatus.Text = string.Format("🟢 [TEREKAM] Anda sedang membaca ulang modul ID {0}", tid);
+                        lblActiveStatus.ForeColor = successGreen;
                         lblActiveFolder.Text = "📂 POHON: " + GetRelativeVaultPath(existing.NoteFilePath);
-                        AddLog(string.Format("[OVERWRITE] Modul ID {0} ({1}) dicatat ulang.", tid, headline), warningAmber);
+                        AddLog(string.Format("[SKIP] Modul ID {0} ({1}) sudah ada di Obsidian. Eksekusi Ctrl+A dibatalkan.", tid, headline), textMuted);
                         
-                        // Tetap proses ekstraksi untuk menimpa
-                        Task.Run(() => ProcessNewModule(aid, tid, canonicalUrl, headline, courseName, hWnd));
+                        // JANGAN panggil Task.Run(() => ProcessNewModule(...)); agar tidak mengekstrak ulang!
                     }
                     else
                     {
